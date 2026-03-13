@@ -174,16 +174,17 @@ export default function Index() {
   // Polling
   useEffect(() => {
     loadScans();
+    loadLogs(); // Load logs on mount
     const interval = setInterval(() => {
       loadScans();
-      if (showLogs) loadLogs();
+      loadLogs(); // Always load logs
       if (expandedId !== null) {
         const s = scans.find(x => x.id === expandedId);
         if (s?.status === "running") loadDetails(expandedId);
       }
     }, 3000);
     return () => clearInterval(interval);
-  }, [expandedId, showLogs]);
+  }, [expandedId]);
 
   const modes: Record<ScanMode, { icon: any, title: string, desc: string }> = {
     quick: { icon: Zap, title: "Быстрый", desc: "Nuclei 1-2 мин" },
