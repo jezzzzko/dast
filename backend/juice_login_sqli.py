@@ -224,19 +224,13 @@ class JuiceShopLoginSQLiDetector:
             except Exception as e:
                 logger.debug(f"Response capture error: {e}")
 
-    async def _test_payload(self, payload: Dict[str, str]) -> Optional[LoginFinding]:
+    async def _try_form_interaction(self, payload: Dict[str, str]) -> Optional[LoginFinding]:
         """
-        Test a single SQLi payload on the login form
+        Try to interact with login form (fallback method)
         """
-        start_time = time.time()
-        
-        # Clear previous captures
-        self.captured_responses.clear()
-        
-        # Fill form fields with payload
         try:
-            # Wait for form to be ready
-            await self.page.wait_for_selector('input[formcontrolname="email"]', timeout=5000)
+            # Wait for form to be ready with longer timeout
+            await self.page.wait_for_selector('input[formcontrolname="email"]', timeout=10000)
             
             # Fill email and password
             await self.page.fill('input[formcontrolname="email"]', payload['email'])
@@ -248,12 +242,77 @@ class JuiceShopLoginSQLiDetector:
             # Click login button
             await self.page.click('button[type="submit"]')
             
+        except Exception as e:
+            logger.debug(f"Form interaction error: {e}")
+            return None
+
+    async def _test_payload(self, payload: Dict[str, str]) -> Optional[LoginFinding]:
+        """
+        Test a single SQLi payload on the login form
+        Uses direct API call instead of form interaction for reliability
+        """
+        start_time = time.time()
+
+        # Clear previous captures
+        self.captured_responses.clear()
+
+        # Method 1: Direct API call (more reliable)
+        try:
+            logger.info(f"Sending direct API request to /rest/user/login")
+            
+            # Make direct POST request to login API
+            response = await self.page.request.post(
+                f"{self.target_url}/rest/user/login",
+                data=payload,  # Use 'data' instead of 'json' in Playwright
+                headers={
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                }
+            )
+            
+            # Read response
+            status = response.status
+            body = await response.text()
+            
+            logger.info(f"API Response: status={status}, body={body[:200]}")
+            
+            # Analyze response
+            if status == 200 and body:
+                finding = await self._analyze_response(
+                    payload=payload,
+                    response={
+                        'status': status,
+                        'body': body,
+                        'headers': response.headers
+                    },
+                    response_time=time.time() - start_time
+                )
+                if finding:
+                    return finding
+                    
+        except Exception as e:
+            logger.error(f"Direct API request error: {e}")
+            
+        # Method 2: Try form interaction as fallback
+        try:
+            await self._try_form_interaction(payload)
+            
             # Wait for response (with timeout)
             await asyncio.sleep(2)
             
+            # Analyze any captured responses
+            for resp in self.captured_responses:
+                if resp['status'] == 200 and resp['body']:
+                    finding = await self._analyze_response(
+                        payload=payload,
+                        response=resp,
+                        response_time=time.time() - start_time
+                    )
+                    if finding:
+                        return finding
+                        
         except Exception as e:
-            logger.error(f"Form interaction error: {e}")
-            return None
+            logger.debug(f"Form interaction fallback error: {e}")
 
         # Analyze captured responses
         for resp in self.captured_responses:
