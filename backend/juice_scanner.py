@@ -193,7 +193,7 @@ class JuiceShopScanner:
         }
         
         # Add SQLi details if this is SQL injection or auth bypass
-        if "SQL" in name or "Authentication" in name:
+        if "SQL" in name.upper() or "AUTH" in name.upper() or "SQL" in description.upper() or "AUTH" in description.upper():
             finding["sqli_details"] = {
                 "email_payload": payload[:200] if payload else "",
                 "password_payload": "anything",
