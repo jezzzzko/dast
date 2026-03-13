@@ -1,0 +1,20 @@
+# Core Framework
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+
+# Database
+sqlalchemy>=2.0.25
+pydantic>=2.6.0
+
+# HTTP Client
+requests>=2.31.0
+
+# Browser Automation (Playwright)
+playwright>=1.40.0
+
+# Async support
+aiohttp>=3.9.0
+aiolimiter>=1.1.0
+
+# Utilities
+python-multipart>=0.0.6
