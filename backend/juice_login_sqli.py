@@ -7,6 +7,7 @@ import asyncio
 import json
 import time
 import re
+from datetime import datetime
 from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
@@ -46,23 +47,60 @@ class LoginFinding:
     timestamp: float = field(default_factory=time.time)
 
     def to_dict(self) -> Dict[str, Any]:
+        """Convert finding to dictionary with full details"""
         return {
             "template-id": f"auth-bypass-{self.vulnerability_type.value}",
             "tool": "juice-login-sqli-detector",
             "info": {
-                "name": f"Authentication Bypass via {self.vulnerability_type.value.replace('_', ' ').title()}",
+                "name": f"🎯 SQL Injection - Authentication Bypass",
                 "description": self.evidence,
                 "severity": self.severity,
-                "solution": "Use parameterized queries for authentication. Implement rate limiting. Use prepared statements.",
+                "solution": "Use parameterized queries. Implement rate limiting. Use prepared statements. Add input validation.",
                 "cwe-id": ["CWE-287", "CWE-89"],
                 "references": [
                     "https://owasp.org/www-project-juice-shop/",
-                    "https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html"
+                    "https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html",
+                    "https://owasp.org/www-community/attacks/SQL_Injection"
                 ]
             },
             "url": self.url,
             "matched-at": self.endpoint,
             "parameter": "email",
+            "evidence": self.evidence[:500],
+            
+            # ===== SQLi DETAILS =====
+            "sqli_details": {
+                "payload": self.payload,
+                "email_payload": self.payload.get('email', ''),
+                "password_payload": self.payload.get('password', ''),
+                "payload_type": self.vulnerability_type.value,
+                "http_status": self.http_status,
+                "response_time_ms": round(self.response_time * 1000, 2),
+                "confidence": self.confidence,
+                "timestamp": datetime.fromtimestamp(self.timestamp).isoformat() if 'datetime' in globals() else None
+            },
+            
+            # ===== AUTH DETAILS =====
+            "authentication": {
+                "bypass_successful": True,
+                "jwt_token": self.jwt_token,
+                "jwt_preview": self.jwt_token[:100] + "..." if self.jwt_token and len(self.jwt_token) > 100 else self.jwt_token,
+                "user_data": self.user_data,
+                "user_id": self.user_data.get('id') if self.user_data else None,
+                "email": self.user_data.get('email') if self.user_data else None
+            },
+            
+            # ===== RAW DATA =====
+            "raw_request": {
+                "method": "POST",
+                "url": f"{self.url}/rest/user/login",
+                "headers": {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
+                "body": self.payload
+            },
+            
             "evidence": self.evidence[:500],
             "payload": json.dumps(self.payload),
             "jwt_token": self.jwt_token,

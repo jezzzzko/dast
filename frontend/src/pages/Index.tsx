@@ -391,7 +391,49 @@ export default function Index() {
                                         <span className="font-medium text-white">{x.info?.name}</span>
                                       </div>
                                       {x.info?.description && <p className="text-sm text-slate-400 mb-2">{x.info.description}</p>}
-                                      <div className="text-xs text-slate-500 flex items-center gap-1">
+                                      
+                                      {/* SQLi Details */}
+                                      {x.sqli_details && (
+                                        <div className="mt-3 space-y-2">
+                                          <div className="text-xs">
+                                            <span className="text-slate-500">Payload:</span>
+                                            <code className="bg-red-900/30 text-red-300 px-2 py-1 rounded ml-2 block mt-1">
+                                              {x.sqli_details.email_payload}
+                                            </code>
+                                          </div>
+                                          {x.sqli_details.password_payload && (
+                                            <div className="text-xs">
+                                              <span className="text-slate-500">Password:</span>
+                                              <code className="bg-slate-800 text-slate-300 px-2 py-1 rounded ml-2 block mt-1">
+                                                {x.sqli_details.password_payload}
+                                              </code>
+                                            </div>
+                                          )}
+                                          <div className="flex gap-4 text-xs mt-2">
+                                            <span className="text-slate-500">Status: <span className="text-green-400">{x.sqli_details.http_status}</span></span>
+                                            <span className="text-slate-500">Time: <span className="text-blue-400">{x.sqli_details.response_time_ms}ms</span></span>
+                                            <span className="text-slate-500">Confidence: <span className="text-purple-400">{(x.sqli_details.confidence * 100).toFixed(0)}%</span></span>
+                                          </div>
+                                        </div>
+                                      )}
+                                      
+                                      {/* JWT Token */}
+                                      {x.authentication?.jwt_token && (
+                                        <div className="mt-3">
+                                          <div className="text-xs text-slate-500 mb-1">JWT Token:</div>
+                                          <code className="bg-green-900/30 text-green-300 px-2 py-1 rounded text-xs block break-all">
+                                            {x.authentication.jwt_preview || x.authentication.jwt_token.substring(0, 100) + '...'}
+                                          </code>
+                                          {x.authentication.user_id && (
+                                            <div className="text-xs mt-2 text-slate-400">
+                                              User ID: <span className="text-white">{x.authentication.user_id}</span>
+                                              {x.authentication.email && <span>, Email: <span className="text-white">{x.authentication.email}</span></span>}
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
+                                      
+                                      <div className="text-xs text-slate-500 flex items-center gap-1 mt-2">
                                         <span className="truncate">{x["matched-at"]}</span>
                                       </div>
                                       {x.evidence && <div className="mt-2"><span className="text-slate-500">Evidence: </span><code className="bg-slate-800 px-2 py-1 rounded text-green-400 text-xs">{x.evidence}</code></div>}
