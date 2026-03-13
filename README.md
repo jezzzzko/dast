@@ -274,4 +274,8 @@ curl http://127.0.0.1:8000/api/v1/scan/{scan_id}
 
 ---
 
+**GitHub:** https://github.com/jezzzko/dast-tool
+
+---
+
 *DAST Scanner v3.0 - Bug Bounty & Vulnerability Scanner*
